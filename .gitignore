@@ -1,0 +1,4 @@
+# JSONL fallback logs (only written to $XDG_STATE_HOME/wc/logs during dev runs)
+wc.log
+*.test
+*.out

@@ -1,0 +1,28 @@
+repos:
+  - repo: local
+    hooks:
+      - id: gofmt
+        name: gofmt
+        entry: ./scripts/tests/gofmt
+        language: system
+        pass_filenames: false
+      - id: shell-parse
+        name: shell_parse
+        entry: ./scripts/tests/shell_parse
+        language: system
+        pass_filenames: false
+      - id: no-local-replace
+        name: check-no-local-replace
+        entry: ./scripts/check-no-local-replace
+        language: system
+        pass_filenames: false
+      - id: no-local-replace-test
+        name: no_local_replace
+        entry: ./scripts/tests/no_local_replace
+        language: system
+        pass_filenames: false
+      - id: go-test
+        name: go_test
+        entry: ./scripts/tests/go_test
+        language: system
+        pass_filenames: false

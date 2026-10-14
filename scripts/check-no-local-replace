@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# check-no-local-replace [go.mod ...]
+#
+# Fails when any go.mod declares a replace directive pointing at a local path.
+# wc-log is consumed by module path (fetched via GOPROXY at a published tag), so
+# a consumer that builds against a local checkout would be building unpublished
+# code. This script is the canonical check for that rule (decision 43); run it in
+# any consumer repo's CI.
+#
+# With no arguments it checks ./go.mod.
+
+set -euo pipefail
+
+if ! command -v go >/dev/null 2>&1; then
+	echo "check-no-local-replace: go toolchain required (install go 1.24 or newer) — failing closed" >&2
+	exit 1
+fi
+
+mods=("$@")
+if [ "${#mods[@]}" -eq 0 ]; then
+	mods=(go.mod)
+fi
+
+status=0
+for mod in "${mods[@]}"; do
+	if [ ! -f "$mod" ]; then
+		echo "check-no-local-replace: $mod not found — failing closed" >&2
+		status=1
+		continue
+	fi
+
+	# A local replacement's target path starts with ./, ../, /, ~/, or a
+	# Windows drive letter. Module paths never start with those, so this cannot
+	# false-positive on a normal path.
+	offenders="$(go mod edit -json "$mod" \
+		| grep -oE '"Path": "(\.\.?/|/|~/|[A-Za-z]:[\\/])[^"]*"' || true)"
+
+	if [ -n "$offenders" ]; then
+		echo "check-no-local-replace: $mod contains a local-path replace directive:" >&2
+		printf '    %s\n' $offenders >&2
+		status=1
+	fi
+done
+
+if [ "$status" -eq 0 ]; then
+	echo "check-no-local-replace: no local-path replace directives"
+fi
+exit "$status"
